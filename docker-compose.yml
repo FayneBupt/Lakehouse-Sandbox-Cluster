@@ -1,0 +1,77 @@
+version: '3'
+
+networks:
+  default:
+    name: paimon-net
+
+services:
+  namenode:
+    image: bde2020/hadoop-namenode:1.1.0-hadoop2.8-java8
+    container_name: paimon-namenode
+    environment:
+      - CLUSTER_NAME=paimon_cluster
+      - CORE_CONF_fs_defaultFS=hdfs://paimon-namenode:8020
+    ports:
+      - "50070:50070"
+      - "8020:8020"
+
+  datanode:
+    image: bde2020/hadoop-datanode:1.1.0-hadoop2.8-java8
+    container_name: paimon-datanode
+    depends_on:
+      - namenode
+    environment:
+      - CORE_CONF_fs_defaultFS=hdfs://paimon-namenode:8020
+    ports:
+      - "50075:50075"
+
+  hive-metastore:
+    image: apache/hive:3.1.3
+    container_name: paimon-hive-metastore
+    depends_on:
+      - namenode
+    environment:
+      - SERVICE_NAME=metastore
+      - DB_DRIVER=derby
+      - CORE_CONF_fs_defaultFS=hdfs://paimon-namenode:8020
+    ports:
+      - "9083:9083"
+
+  flink-jobmanager:
+    image: flink:1.18.1-java11
+    container_name: paimon-flink-jobmanager
+    ports:
+      - "8081:8081"
+    command: jobmanager
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: flink-jobmanager
+        env.hadoop.conf.dir: /opt/hadoop/conf
+      - HADOOP_USER_NAME=root
+      - HADOOP_CONF_DIR=/opt/hadoop/conf
+    volumes:
+      - ./lib/paimon-flink-1.18-0.8.0.jar:/opt/flink/lib/paimon-flink-1.18-0.8.0.jar
+      - ./lib/flink-shaded-hadoop-2-uber-2.8.3-10.0.jar:/opt/flink/lib/flink-shaded-hadoop-2-uber-2.8.3-10.0.jar
+      - ./lib/flink-sql-connector-hive-3.1.3_2.12-1.18.1.jar:/opt/flink/lib/flink-sql-connector-hive-3.1.3_2.12-1.18.1.jar
+      - ./hadoop-conf:/opt/hadoop/conf
+
+  flink-taskmanager:
+    image: flink:1.18.1-java11
+    container_name: paimon-flink-taskmanager
+    depends_on:
+      - flink-jobmanager
+    command: taskmanager
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: flink-jobmanager
+        taskmanager.numberOfTaskSlots: 2
+        env.hadoop.conf.dir: /opt/hadoop/conf
+      - HADOOP_USER_NAME=root
+      - HADOOP_CONF_DIR=/opt/hadoop/conf
+    volumes:
+      - ./lib/paimon-flink-1.18-0.8.0.jar:/opt/flink/lib/paimon-flink-1.18-0.8.0.jar
+      - ./lib/flink-shaded-hadoop-2-uber-2.8.3-10.0.jar:/opt/flink/lib/flink-shaded-hadoop-2-uber-2.8.3-10.0.jar
+      - ./lib/flink-sql-connector-hive-3.1.3_2.12-1.18.1.jar:/opt/flink/lib/flink-sql-connector-hive-3.1.3_2.12-1.18.1.jar
+      - ./hadoop-conf:/opt/hadoop/conf
