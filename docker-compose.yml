@@ -48,7 +48,7 @@ services:
         FLINK_PROPERTIES=
         jobmanager.rpc.address: flink-jobmanager
         env.hadoop.conf.dir: /opt/hadoop/conf
-      - HADOOP_USER_NAME=root
+      - HADOOP_USER_NAME=hadoop
       - HADOOP_CONF_DIR=/opt/hadoop/conf
     volumes:
       - ./lib/paimon-flink-1.18-0.8.0.jar:/opt/flink/lib/paimon-flink-1.18-0.8.0.jar
@@ -68,7 +68,7 @@ services:
         jobmanager.rpc.address: flink-jobmanager
         taskmanager.numberOfTaskSlots: 2
         env.hadoop.conf.dir: /opt/hadoop/conf
-      - HADOOP_USER_NAME=root
+      - HADOOP_USER_NAME=hadoop
       - HADOOP_CONF_DIR=/opt/hadoop/conf
     volumes:
       - ./lib/paimon-flink-1.18-0.8.0.jar:/opt/flink/lib/paimon-flink-1.18-0.8.0.jar
